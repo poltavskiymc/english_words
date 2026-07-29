@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3949ab">
+<title>English Words — карточки и повторения</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="English">
+<!-- ?v=… у css и js обязан совпадать с VER в sw.js, иначе обновление уедет мимо кеша -->
+<link rel="stylesheet" href="css/styles.css?v=1">
+</head>
+<body>
+<header>
+  <div class="htext">
+    <h1>🇬🇧 English Words</h1>
+    <div class="sub">Карточки · пары · тест · интервальные повторения</div>
+  </div>
+  <button id="settingsBtn" class="hgear" title="Настройки">⚙️</button>
+</header>
+
+<main>
+  <!-- ТРЕНИРОВКА: настройка → сессия → итоги. Видна ровно одна из трёх частей. -->
+  <section class="view active" id="v-train">
+    <div id="trainSetup">
+      <div class="card">
+        <h2>🎯 Тренировка</h2>
+        <label>Режим</label>
+        <div class="seg" id="segMode">
+          <button data-v="cards"><span class="si">🃏</span>Карточки</button>
+          <button data-v="pairs"><span class="si">🔗</span>Пары</button>
+          <button data-v="quiz"><span class="si">✅</span>Тест</button>
+        </div>
+        <label>Направление</label>
+        <div class="seg" id="segDir">
+          <button data-v="en-ru">EN → RU</button>
+          <button data-v="ru-en">RU → EN</button>
+          <button data-v="mix">Микс</button>
+        </div>
+        <label>Категории</label>
+        <div class="chips wrap" id="catChips"></div>
+        <div class="muted" id="trHint" style="margin-top:12px"></div>
+        <button class="btn big" id="startBtn" style="margin-top:12px">Начать</button>
+      </div>
+      <div class="card" id="modeHelp"></div>
+    </div>
+
+    <div id="trainRun" hidden>
+      <div class="runtop">
+        <div class="bar"><i id="runBar" style="width:0%"></i></div>
+        <div class="runn" id="runCount">0/0</div>
+        <button class="btn ghost sm" id="stopBtn" title="Закончить">✕</button>
+      </div>
+      <div id="trBox"></div>
+    </div>
+
+    <div id="trainDone" hidden></div>
+  </section>
+
+  <!-- НАБОРЫ -->
+  <section class="view" id="v-decks">
+    <div class="card">
+      <h2>📚 Готовые наборы</h2>
+      <p class="muted">Тематические подборки. Добавляй сколько угодно раз: у слов, которые уже в словаре, обновится только перевод — прогресс и «выучено» останутся на месте.</p>
+    </div>
+    <div id="decksBox"></div>
+  </section>
+
+  <!-- СЛОВА: список / добавление и импорт / генерация ИИ -->
+  <section class="view" id="v-words">
+    <div class="tabs" data-sub="words">
+      <button data-s="list">📋 Список</button>
+      <button data-s="add">➕ Добавить</button>
+      <button data-s="ai">✨ ИИ</button>
+    </div>
+
+    <div class="subview" id="s-list">
+      <div class="card">
+        <input type="text" id="wSearch" placeholder="🔎 поиск по слову или переводу">
+        <div class="chips wrap" id="wCatFilter" style="margin-top:10px"></div>
+      </div>
+      <div class="card" id="wListBox"></div>
+    </div>
+
+    <div class="subview" id="s-add">
+      <div class="card">
+        <h2>➕ Своё слово</h2>
+        <label>Слово по-английски</label>
+        <input id="aEn" type="text" placeholder="persistent" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <label>Перевод</label>
+        <input id="aRu" type="text" placeholder="настойчивый">
+        <label>Пример (необязательно)</label>
+        <input id="aEx" type="text" placeholder="She is persistent." autocapitalize="off">
+        <label>Категория</label>
+        <input id="aCat" type="text" placeholder="Своё" list="catList">
+        <button class="btn" id="addBtn" style="margin-top:12px">Добавить</button>
+      </div>
+
+      <div class="card">
+        <h2>📥 Импорт списком</h2>
+        <p class="muted">По строке на слово, колонки через <b>табуляцию</b>:<br>
+          <code>слово ⇥ перевод ⇥ пример ⇥ категория</code><br>
+          Пример и категория необязательны. Если табов нет, сойдёт и «слово — перевод».</p>
+        <textarea id="impText" rows="6" placeholder="persistent&#9;настойчивый&#9;She is persistent.&#9;Характер"></textarea>
+        <div class="row2">
+          <button class="btn" id="impBtn">Импортировать</button>
+          <label class="btn ghost file">📄 Из файла<input type="file" id="impFile" accept=".tsv,.txt,.csv"></label>
+          <button class="btn ghost" id="expBtn">📤 Выгрузить</button>
+        </div>
+        <div class="muted" id="impHint" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <div class="subview" id="s-ai">
+      <div class="card">
+        <h2>✨ Набор от ИИ</h2>
+        <p class="muted" id="aiKeyHint"></p>
+        <label>Тема</label>
+        <input id="aiTopic" type="text" placeholder="напр. приём у врача">
+        <div class="chips" id="aiChips"></div>
+        <label>Сколько слов</label>
+        <input id="aiCount" type="number" min="5" max="60" step="5" value="20">
+        <button class="btn" id="aiBtn" style="margin-top:12px">Сгенерировать</button>
+        <div id="aiOut"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ПРОГРЕСС. Всё внутри рисует stats.js -->
+  <section class="view" id="v-stats">
+    <div class="card"><h2>📊 Прогресс</h2><div id="statsBox"></div></div>
+    <div class="card"><h2>📅 Последние две недели</h2><div id="daysBox"></div></div>
+    <div class="card"><h2>🗂 По категориям</h2><div id="catStatsBox"></div></div>
+    <div class="card"><h2>🏆 Ачивки</h2><div id="achBox"></div></div>
+  </section>
+
+  <!-- НАСТРОЙКИ: открываются шестерёнкой в шапке, вкладки в навбаре у них нет -->
+  <section class="view" id="v-settings">
+    <div class="card">
+      <h2>⚙️ Тренировка</h2>
+      <label>Новых слов в день</label>
+      <input id="setNew" type="number" min="1" max="100">
+      <label>Слов в сессии</label>
+      <input id="setSize" type="number" min="5" max="100">
+      <button class="btn" id="saveTrain" style="margin-top:12px">Сохранить</button>
+    </div>
+
+    <div class="card">
+      <h2>🔑 Ключ DeepSeek</h2>
+      <p class="muted">Нужен только для генерации наборов на вкладке «Слова → ИИ». Ключ лежит в этом браузере и никуда, кроме самого DeepSeek, не уходит.</p>
+      <label>API-ключ</label>
+      <input id="apiKey" type="password" placeholder="sk-…" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <label>Модель</label>
+      <input id="model" type="text" placeholder="deepseek-chat" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button class="btn" id="saveKey" style="margin-top:12px">Сохранить</button>
+    </div>
+
+    <div class="card">
+      <h2>📶 Трафик</h2>
+      <div id="trafficBox"></div>
+      <button class="btn ghost sm" id="resetTraffic" style="margin-top:10px">Сбросить счётчик</button>
+    </div>
+
+    <div class="card">
+      <h2>💾 Данные</h2>
+      <p class="muted">Слова, прогресс и ачивки живут в этом браузере. Меняешь телефон — выгрузи TSV и загрузи его на новом.</p>
+      <div class="row2">
+        <button class="btn ghost" id="expBtn2">📤 Выгрузить слова</button>
+        <button class="btn ghost danger" id="wipeBtn">🗑 Стереть всё</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🔄 Обновление</h2>
+      <p class="muted">Приложение работает оффлайн из кеша. Если кажется, что версия застряла — нажми и подожди перезагрузку.</p>
+      <button class="btn" id="updateApp">Обновить приложение</button>
+      <div class="muted" id="updHint" style="margin-top:8px"></div>
+      <div class="muted" id="verLine" style="margin-top:8px"></div>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button data-v="train" class="active"><span class="ic">🎯</span>Учить</button>
+  <button data-v="decks"><span class="ic">📚</span>Наборы</button>
+  <button data-v="words"><span class="ic">📝</span>Слова</button>
+  <button data-v="stats"><span class="ic">📊</span>Прогресс</button>
+</nav>
+
+<!-- Общий список категорий для полей ввода (заполняет words.js) -->
+<datalist id="catList"></datalist>
+
+<!-- Карточка слова: правка, «выучено», удаление -->
+<div class="modal" id="editModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><div class="mtitle">Слово</div><button class="modal-x" id="editClose">✕</button></div>
+    <div class="modal-body">
+      <label>Слово по-английски</label>
+      <input id="eEn" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <label>Перевод</label><input id="eRu" type="text">
+      <label>Пример</label><input id="eEx" type="text" autocapitalize="off">
+      <label>Категория</label><input id="eCat" type="text" list="catList">
+      <label class="chk"><input type="checkbox" id="eLearned"> выучено</label>
+      <div class="muted" id="eMeta" style="margin-top:10px"></div>
+      <div class="row2">
+        <button class="btn" id="eSave">Сохранить</button>
+        <button class="btn ghost danger" id="eDel">🗑 Удалить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Порядок важен: модулей нет, всё общается глобальными функциями.
+     data → util → traffic → nav → store → stats → тренажёры → контент → ИИ → настройки. -->
+<script src="js/data.js?v=1"></script>
+<script src="js/util.js?v=1"></script>
+<script src="js/traffic.js?v=1"></script>
+<script src="js/nav.js?v=1"></script>
+<script src="js/store.js?v=1"></script>
+<script src="js/stats.js?v=1"></script>
+<script src="js/train.js?v=1"></script>
+<script src="js/decks.js?v=1"></script>
+<script src="js/words.js?v=1"></script>
+<script src="js/ai.js?v=1"></script>
+<script src="js/settings.js?v=1"></script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>

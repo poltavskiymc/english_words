@@ -1,0 +1,226 @@
+/* Единственный стиль приложения. Светлая/тёмная тема — через CSS-переменные,
+   переключение автоматическое по системной настройке (как в грузинской аппке). */
+
+:root{
+  --brand:#3949ab; --brand2:#5c6bc0; --gold:#f2b134;
+  --ink:#181a22; --paper:#f6f7fb; --card:#ffffff;
+  --muted:#6b7183; --line:#e3e6f0;
+  --ok:#2f9e5f; --bad:#d94b4b;
+  --shadow:0 2px 10px rgba(28,32,60,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --brand:#5c6bc0; --brand2:#7c8ae0;
+    --ink:#eef0f7; --paper:#10121a; --card:#191c26;
+    --muted:#98a0b8; --line:#2a2f3d;
+    --shadow:0 2px 12px rgba(0,0,0,.45);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--paper); color:var(--ink); line-height:1.5;
+  -webkit-tap-highlight-color:transparent;
+  padding-bottom:calc(72px + env(safe-area-inset-bottom));
+  /* iOS в PWA урезает вьюпорт на высоту Home-индикатора, пока страница не прокручивается,
+     и fixed-навбар садится выше низа экрана. Держим документ чуть выше вьюпорта. */
+  min-height:calc(100vh + 1px);
+}
+header{
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  color:#fff; padding:calc(4px + env(safe-area-inset-top)) 12px 5px;
+  position:sticky; top:0; z-index:20;
+  display:flex; align-items:center; gap:10px;
+}
+header .htext{flex:1; min-width:0}
+header h1{margin:0; font-size:15px; font-weight:700; display:flex; align-items:center; gap:6px}
+header .sub{opacity:.75; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+header .hgear{flex-shrink:0; border:0; background:rgba(255,255,255,.16); color:#fff; width:36px; height:36px; border-radius:50%; font-size:18px; cursor:pointer; line-height:1}
+header .hgear:active{transform:scale(.92)}
+
+main{max-width:640px; margin:0 auto; padding:14px}
+.view{display:none; animation:fade .18s ease}
+.view.active{display:block}
+.subview{display:none}
+.subview.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:var(--shadow)}
+.card h2{margin:0 0 8px; font-size:15px; color:var(--brand); letter-spacing:.2px}
+.card p{margin:0 0 8px}
+.card p:last-child{margin-bottom:0}
+.muted{color:var(--muted); font-size:13px}
+.empty{text-align:center; padding:12px 0}
+code{background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:1px 5px; font-size:12px}
+
+nav{
+  position:fixed; bottom:0; left:0; right:0; z-index:30;
+  display:flex; background:var(--card); border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+nav button{
+  flex:1; background:none; border:0; color:var(--muted); font-size:11px; font-weight:600;
+  padding:9px 2px 8px; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;
+}
+nav button .ic{font-size:20px; line-height:1}
+nav button.active{color:var(--brand)}
+
+/* переключатель под-вкладок внутри «Слов» */
+.tabs{display:flex; gap:6px; margin-bottom:12px}
+.tabs button{flex:1; border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:10px; padding:8px 4px; font-size:12.5px; font-weight:600; cursor:pointer}
+.tabs button.active{background:var(--brand); border-color:var(--brand); color:#fff}
+
+/* ---- элементы форм ---- */
+/* ВАЖНО: у всех полей font-size >= 16px. iOS Safari при фокусе поля с меньшим шрифтом
+   зумит страницу, и в standalone-PWA этот зум уже не откатывается. */
+label{display:block; font-size:12.5px; font-weight:600; margin:12px 0 4px; color:var(--muted)}
+label:first-of-type{margin-top:4px}
+input[type=text],input[type=password],input[type=number],textarea{
+  width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:10px;
+  font-size:16px; background:var(--paper); color:var(--ink); font-family:inherit;
+}
+textarea{resize:vertical; line-height:1.4}
+input:focus,textarea:focus{outline:2px solid var(--brand2); outline-offset:-1px}
+.chk{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:var(--ink); margin-top:14px}
+.chk input{width:20px; height:20px; accent-color:var(--brand)}
+
+.btn{display:inline-block; border:0; background:var(--brand); color:#fff; padding:11px 16px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; text-align:center}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5; transform:none}
+.btn.ghost{background:transparent; color:var(--brand); border:1px solid var(--line)}
+.btn.sm{padding:8px 12px; font-size:13px}
+.btn.big{display:block; width:100%; padding:15px; font-size:16px}
+.btn.danger{color:var(--bad); border-color:var(--bad)}
+.row2{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+/* «выбрать файл» прикидывается обычной кнопкой */
+.file{position:relative; overflow:hidden}
+.file input{position:absolute; inset:0; opacity:0; width:100%; cursor:pointer}
+
+.chips{display:flex; gap:6px; overflow-x:auto; padding:2px 0; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips.wrap{flex-wrap:wrap; overflow:visible}
+.chip{flex:0 0 auto; white-space:nowrap; border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:16px; padding:6px 12px; font-size:12.5px; cursor:pointer}
+.chip b{font-weight:700}
+.chip.on{background:var(--brand); border-color:var(--brand); color:#fff}
+
+/* сегменты: режим и направление тренировки */
+.seg{display:flex; gap:6px}
+.seg button{flex:1; border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:10px; padding:9px 4px; font-size:12.5px; font-weight:600; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px}
+.seg button .si{font-size:17px; line-height:1}
+.seg button.on{background:var(--brand); border-color:var(--brand); color:#fff}
+
+/* ---- тренировка ---- */
+.runtop{display:flex; align-items:center; gap:10px; margin-bottom:12px}
+.runtop .runn{font-size:12.5px; font-weight:700; color:var(--muted); white-space:nowrap}
+.runtop .btn{padding:6px 11px}
+
+/* Карточка переворачивается настоящим 3D-флипом: обе стороны лежат в DOM,
+   клик только вешает класс .on — поэтому перерисовки и мигания нет. */
+.flip3d{perspective:1200px; cursor:pointer; margin-bottom:14px}
+.f3i{position:relative; height:250px; transform-style:preserve-3d; transition:transform .45s cubic-bezier(.4,.2,.2,1)}
+.flip3d.on .f3i{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+  padding:18px; text-align:center; overflow:auto;
+}
+.face.back{transform:rotateY(180deg)}
+.face .big{font-size:30px; font-weight:700; line-height:1.2; word-break:break-word}
+.face .ex{font-size:13.5px; color:var(--muted); font-style:italic; margin-top:2px}
+.face .tip{position:absolute; bottom:12px; left:0; right:0; font-size:11px; color:var(--muted); opacity:.8}
+.face .lvlpill{position:absolute; top:12px; right:12px; font-size:10.5px; font-weight:700; color:var(--muted); border:1px solid var(--line); border-radius:8px; padding:2px 7px}
+.say{border:0; background:var(--brand); color:#fff; width:40px; height:40px; border-radius:50%; font-size:17px; flex-shrink:0; cursor:pointer}
+.say:active{transform:scale(.9)}
+
+/* тест: слово и варианты ответа */
+.qword{font-size:28px; font-weight:700; text-align:center; line-height:1.2; word-break:break-word}
+.qtop{display:flex; align-items:center; justify-content:center; gap:10px; padding:6px 0 2px}
+.opts{display:flex; flex-direction:column; gap:8px; margin-top:14px}
+.opt{border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:12px; padding:13px 14px; font-size:15px; text-align:left; cursor:pointer; font-family:inherit}
+.opt:active{transform:scale(.99)}
+.opt.ok{background:rgba(47,158,95,.16); border-color:var(--ok); font-weight:700}
+.opt.no{background:rgba(217,75,75,.16); border-color:var(--bad)}
+.qex{margin-top:12px; font-size:13.5px; color:var(--muted); font-style:italic; text-align:center}
+
+/* пары: два столбца, соединить слово с переводом */
+.pairs{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px}
+.pcol{display:flex; flex-direction:column; gap:8px}
+.pbtn{border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:11px; padding:11px 8px; font-size:14px; min-height:50px; cursor:pointer; word-break:break-word; font-family:inherit; line-height:1.25}
+.pbtn.sel{background:var(--brand); border-color:var(--brand); color:#fff}
+.pbtn.done{opacity:.22; border-style:dashed; pointer-events:none}
+.pbtn.err{background:rgba(217,75,75,.18); border-color:var(--bad); animation:shake .34s}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-5px)}50%{transform:translateX(5px)}80%{transform:translateX(-3px)}}
+
+/* итоги сессии */
+.done{text-align:center}
+.done .dic{font-size:44px; line-height:1}
+.done h2{color:var(--brand); font-size:18px; margin:6px 0 2px}
+
+/* ---- наборы ---- */
+.deck{display:flex; align-items:center; gap:11px}
+.deck .di{font-size:26px; flex-shrink:0; width:34px; text-align:center}
+.deck .dt{flex:1; min-width:0}
+.deck .dn{font-weight:600; font-size:14.5px}
+.deck .dd{font-size:12px; color:var(--muted)}
+
+/* ---- список слов ---- */
+.wrow{display:flex; align-items:center; gap:9px; padding:9px 0; border-bottom:1px solid var(--line)}
+.wrow:last-child{border-bottom:0}
+.wrow .wt{flex:1; min-width:0; cursor:pointer}
+.wrow .we{font-weight:600; font-size:14.5px; word-break:break-word}
+.wrow .wr{font-size:12.5px; color:var(--muted); word-break:break-word}
+.wrow.done .we{text-decoration:line-through; opacity:.55}
+.lvl{flex-shrink:0; font-size:10.5px; font-weight:700; color:var(--muted); border:1px solid var(--line); border-radius:8px; padding:2px 6px}
+.lvl.max{color:var(--ok); border-color:var(--ok)}
+.wsay{border:0; background:none; color:var(--brand); font-size:17px; width:30px; padding:6px 0; cursor:pointer; flex-shrink:0; line-height:1}
+
+/* ---- прогресс (рисует stats.js) ---- */
+.prog{display:flex; align-items:center; gap:10px}
+.bar{flex:1; height:10px; background:var(--line); border-radius:6px; overflow:hidden}
+.bar i{display:block; height:100%; background:linear-gradient(90deg,var(--brand),var(--brand2)); border-radius:6px; transition:width .3s}
+.bar.sm{height:7px}
+.pn{font-weight:700; font-size:14px; width:44px; text-align:right}
+.tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px}
+.tile{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:9px 4px; text-align:center}
+.tile .ti{font-size:17px; line-height:1.2}
+.tile .tn{font-size:19px; font-weight:700; line-height:1.2}
+.tile .tl{font-size:10.5px; color:var(--muted); line-height:1.25}
+.bars{display:flex; align-items:flex-end; gap:4px; height:112px}
+.bcol{flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%}
+.bcol i{display:block; width:100%; max-height:calc(100% - 16px); background:linear-gradient(180deg,var(--brand2),var(--brand)); border-radius:4px 4px 0 0; min-height:3px}
+.bcol i.zero{background:var(--line)}
+.bcol span{font-size:9.5px; color:var(--muted); margin-top:3px}
+.crow{display:flex; align-items:center; gap:9px; padding:6px 0}
+.crow .cnm{width:40%; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.crow .cnum{font-size:12px; color:var(--muted); width:54px; text-align:right}
+.achgrid{display:flex; flex-direction:column}
+.ach{display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); opacity:.42}
+.ach:last-child{border-bottom:0}
+.ach.on{opacity:1}
+.ach .ai{font-size:20px; width:26px; text-align:center; flex-shrink:0}
+.ach .at{flex:1; min-width:0}
+.ach .an{font-size:14px; font-weight:600}
+.ach .ad{font-size:11.5px; color:var(--muted); line-height:1.35}
+.ach .ax{color:var(--ok); font-weight:700; width:18px; text-align:center; flex-shrink:0}
+
+/* ---- модалка правки слова ---- */
+.modal{position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.5); display:flex; align-items:flex-end; justify-content:center}
+.modal[hidden]{display:none}
+.modal-card{background:var(--paper); width:100%; max-width:640px; max-height:90vh; border-radius:16px 16px 0 0; display:flex; flex-direction:column; animation:slideup .22s ease}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+.modal-head{display:flex; align-items:center; gap:10px; padding:13px 16px; border-bottom:1px solid var(--line)}
+.modal-head .mtitle{flex:1; min-width:0; font-size:16px; font-weight:700; color:var(--brand)}
+.modal-x{border:1px solid var(--line); background:var(--card); color:var(--ink); width:34px; height:34px; border-radius:50%; font-size:15px; cursor:pointer; flex-shrink:0}
+.modal-body{padding:6px 16px calc(20px + env(safe-area-inset-bottom)); overflow-y:auto; -webkit-overflow-scrolling:touch}
+
+/* тост: ачивки, «добавлено», ошибки импорта. Создаётся из util.js по требованию. */
+#toast{
+  position:fixed; left:50%; bottom:calc(var(--nav-h,60px) + 18px); z-index:80;
+  transform:translate(-50%,14px); opacity:0; pointer-events:none;
+  background:var(--ink); color:var(--paper); padding:10px 16px; border-radius:20px;
+  font-size:13.5px; max-width:88vw; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,.3);
+  transition:opacity .2s, transform .2s;
+}
+#toast.on{opacity:1; transform:translate(-50%,0)}
