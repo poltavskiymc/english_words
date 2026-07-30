@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="English">
 <!-- ?v=… у css и js обязан совпадать с VER в sw.js, иначе обновление уедет мимо кеша -->
-<link rel="stylesheet" href="css/styles.css?v=1">
+<link rel="stylesheet" href="css/styles.css?v=2">
 </head>
 <body>
 <header>
@@ -55,6 +55,7 @@
         <div class="runn" id="runCount">0/0</div>
         <button class="btn ghost sm" id="stopBtn" title="Закончить">✕</button>
       </div>
+      <div class="freebadge" id="runFree" hidden>🔁 без расписания</div>
       <div id="trBox"></div>
     </div>
 
@@ -216,17 +217,17 @@
 
 <!-- Порядок важен: модулей нет, всё общается глобальными функциями.
      data → util → traffic → nav → store → stats → тренажёры → контент → ИИ → настройки. -->
-<script src="js/data.js?v=1"></script>
-<script src="js/util.js?v=1"></script>
-<script src="js/traffic.js?v=1"></script>
-<script src="js/nav.js?v=1"></script>
-<script src="js/store.js?v=1"></script>
-<script src="js/stats.js?v=1"></script>
-<script src="js/train.js?v=1"></script>
-<script src="js/decks.js?v=1"></script>
-<script src="js/words.js?v=1"></script>
-<script src="js/ai.js?v=1"></script>
-<script src="js/settings.js?v=1"></script>
+<script src="js/data.js?v=2"></script>
+<script src="js/util.js?v=2"></script>
+<script src="js/traffic.js?v=2"></script>
+<script src="js/nav.js?v=2"></script>
+<script src="js/store.js?v=2"></script>
+<script src="js/stats.js?v=2"></script>
+<script src="js/train.js?v=2"></script>
+<script src="js/decks.js?v=2"></script>
+<script src="js/words.js?v=2"></script>
+<script src="js/ai.js?v=2"></script>
+<script src="js/settings.js?v=2"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));

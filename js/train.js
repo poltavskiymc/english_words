@@ -49,19 +49,28 @@ function renderSetup(){
     cs.map(c=>`<button class="chip${cfg.cats.includes(c.cat)?' on':''}" data-c="${esc(c.cat)}">${esc(c.cat)} <b>${c.due}</b></button>`).join('');
   box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>toggleCat(b.dataset.c)));
 
+  /* Две цифры: сколько слов ждёт по расписанию и сколько вообще можно погонять
+     в выбранных категориях. Когда расписание пусто, кнопка не гаснет, а переключается
+     на свободную тренировку — иначе занятие упирается в «приходи завтра». */
   const ready = buildSession(cfg.cats, cfg.sessionSize).length;
+  const free  = buildSession(cfg.cats, cfg.sessionSize, true).length;
   const total = activeWords().length;
-  const hint = document.getElementById('trHint');
+  const hint  = document.getElementById('trHint');
+  const btn   = document.getElementById('startBtn');
+
   if(!words.length){
     hint.innerHTML = 'Словарь пока пуст. Загляни в <b>📚 Наборы</b> или добавь свои слова.';
-  }else if(!ready){
-    hint.innerHTML = total
-      ? 'На сегодня всё повторено 🎉 Слова вернутся по расписанию — а пока можно добавить новых.'
-      : 'Все слова помечены выученными. Сними галочку в списке, если хочешь их повторить.';
+  }else if(ready){
+    hint.innerHTML = `К повторению сейчас: <b>${ready}</b> ${plural(ready,'слово','слова','слов')} · всего в изучении ${total}`;
+  }else if(free){
+    hint.innerHTML = 'На сегодня всё повторено 🎉 Можно погонять ещё — но уже мимо расписания, интервалы слегка собьются.';
   }else{
-    hint.innerHTML = `Готово к показу: <b>${ready}</b> ${plural(ready,'слово','слова','слов')} · всего в изучении ${total}`;
+    hint.innerHTML = total
+      ? 'В выбранных категориях нет невыученных слов. Сними фильтр или добавь новых.'
+      : 'Все слова помечены выученными. Сними галочку в списке, если хочешь их повторить.';
   }
-  document.getElementById('startBtn').disabled = !ready;
+  btn.textContent = ready ? 'Начать' : '🔁 Повторить без расписания';
+  btn.disabled = !(ready || free);
 }
 
 function toggleCat(c){
@@ -73,16 +82,23 @@ function toggleCat(c){
 
 document.querySelectorAll('#segMode button').forEach(b=>b.addEventListener('click',()=>{ cfg.mode=b.dataset.v; saveCfg(); renderSetup(); }));
 document.querySelectorAll('#segDir  button').forEach(b=>b.addEventListener('click',()=>{ cfg.dir =b.dataset.v; saveCfg(); renderSetup(); }));
-document.getElementById('startBtn').addEventListener('click', startSession);
+// ⚠️ обёртка обязательна: addEventListener передал бы в startSession событие,
+// а оно истинное — и любая тренировка молча уходила бы в режим «без расписания»
+document.getElementById('startBtn').addEventListener('click', ()=>startSession());
 document.getElementById('stopBtn').addEventListener('click', ()=>{ if(ses) endSession(); });
 
 /* ---------- жизненный цикл сессии ---------- */
 
-function startSession(){
-  const list = buildSession(cfg.cats, cfg.sessionSize);
-  if(!list.length){ toast('Нечего повторять — добавь слова или загляни завтра'); return; }
+/* force=true — сразу свободная тренировка. Без него сначала пробуем расписание
+   и падаем в свободный режим, только если по расписанию пусто. */
+function startSession(force){
+  let free = !!force;
+  let list = free ? [] : buildSession(cfg.cats, cfg.sessionSize);
+  if(!list.length){ free = true; list = buildSession(cfg.cats, cfg.sessionSize, true); }
+  if(!list.length){ toast('Нечего повторять — добавь слова или сними фильтр категорий'); return; }
+  document.getElementById('runFree').hidden = !free;
   ses = {
-    mode: cfg.mode, dir: cfg.dir,
+    mode: cfg.mode, dir: cfg.dir, free,
     queue: list.slice(), total: list.length,
     done: 0, ok: 0, bad: 0,
     again: new Set(),                 // слова, уже один раз вернувшиеся в очередь
@@ -134,19 +150,26 @@ function endSession(){
   const asked = s.ok + s.bad;
   const acc = asked ? Math.round(s.ok/asked*100) : 0;
   const icon = s.mode==='cards' ? '🃏' : (!s.bad && asked ? '🏆' : (acc>=70 ? '👍' : '💪'));
+  const more = buildSession(cfg.cats, cfg.sessionSize, true).length;
   trRunEl.hidden = true; trDoneEl.hidden = false;
   trDoneEl.innerHTML =
     `<div class="card done">`+
       `<div class="dic">${icon}</div>`+
       `<h2>Сессия закончена</h2>`+
-      `<p class="muted">Пройдено ${nWords(s.done)} из ${s.total}</p>`+
+      `<p class="muted">Пройдено ${nWords(s.done)} из ${s.total}${s.free?' · без расписания':''}</p>`+
       (asked ? `<div class="tiles">`+tile('✅', s.ok, 'верно')+tile('❌', s.bad, 'ошибок')+tile('🎯', acc+'%', 'точность')+`</div>` : '')+
       `<div class="row2">`+
-        `<button class="btn" id="againBtn" style="flex:1">Ещё сессию</button>`+
+        (more ? `<button class="btn" id="againBtn" style="flex:1">Ещё сессию</button>` : '')+
         `<button class="btn ghost" id="backBtn" style="flex:1">Готово</button>`+
       `</div>`+
+      (more ? '' : `<p class="muted" style="margin-top:10px">Невыученных слов в выбранных категориях больше нет.</p>`)+
     `</div>`;
-  document.getElementById('againBtn').addEventListener('click',()=>{ trDoneEl.hidden=true; startSession(); });
+  const again = document.getElementById('againBtn');
+  if(again) again.addEventListener('click',()=>{
+    trDoneEl.hidden = true;
+    startSession();
+    if(!ses){ trSetupEl.hidden = false; renderSetup(); }   // не стартанула — не оставляем пустой экран
+  });
   document.getElementById('backBtn').addEventListener('click',()=>{ trDoneEl.hidden=true; trSetupEl.hidden=false; renderSetup(); });
   window.scrollTo(0,0);
 }
@@ -176,8 +199,10 @@ function drawCard(){
         `<div class="tip">${esc(w.cat)}</div>`+
       `</div>`+
     `</div></div>`+
-    `<button class="btn big" id="nextBtn">Дальше →</button>`+
-    `<div class="row2" style="justify-content:center"><button class="btn ghost sm" id="easyBtn">👌 Изян — уже знаю</button></div>`;
+    `<div class="acts">`+
+      `<button class="btn big" id="nextBtn">Дальше →</button>`+
+      `<button class="btn ghost sm" id="easyBtn">👌 Изян — уже знаю</button>`+
+    `</div>`;
 
   const flip = document.getElementById('cardFlip');
   flip.addEventListener('click', e=>{
@@ -219,14 +244,16 @@ function drawQuiz(){
   const opts = shuffle([answer, ...sample(pool,3)]);
   const rightIdx = opts.indexOf(answer);
 
+  /* Вопрос висит по центру свободного места, варианты прижаты к низу —
+     на телефоне до них дотягивается большой палец, а не вторая рука. */
   trBox.innerHTML =
-    `<div class="card">`+
+    `<div class="qhead">`+
       `<div class="qtop"><div class="qword">${esc(frontOf(w,s))}</div>`+
         (askEn ? `<button class="say" id="qSay" title="Произнести">🔊</button>` : '')+
       `</div>`+
-      `<div class="opts">`+opts.map((t,i)=>`<button class="opt" data-i="${i}">${esc(t)}</button>`).join('')+`</div>`+
       `<div class="qex" id="qEx"></div>`+
-    `</div>`;
+    `</div>`+
+    `<div class="opts">`+opts.map((t,i)=>`<button class="opt" data-i="${i}">${esc(t)}</button>`).join('')+`</div>`;
 
   const q=document.getElementById('qSay'); if(q) q.addEventListener('click',()=>speak(w.en));
   trBox.querySelectorAll('.opt').forEach((b,i)=>b.addEventListener('click',()=>answerQuiz(i, rightIdx)));
@@ -240,6 +267,7 @@ function answerQuiz(picked, rightIdx){
   btns[rightIdx].classList.add('ok');
 
   const ok = picked===rightIdx;
+  buzz(ok ? 14 : [22,40,22]);
   if(ok){
     ses.ok++; ses.done++;
     grade(w.id, true, true);
@@ -274,12 +302,10 @@ function pbtn(text, key, done, sel, err){
 
 function drawPairs(){
   trBox.innerHTML =
-    `<div class="card">`+
-      `<p class="muted" style="text-align:center">Соедини слово с переводом</p>`+
-      `<div class="pairs">`+
-        `<div class="pcol">`+ses.left .map((w,i)=>pbtn(frontOf(w,ses.side), 'L'+i, ses.matched.has(w.id), ses.sel===i, ses.errL===i)).join('')+`</div>`+
-        `<div class="pcol">`+ses.right.map((w,i)=>pbtn(backOf(w,ses.side),  'R'+i, ses.matched.has(w.id), false,       ses.errR===i)).join('')+`</div>`+
-      `</div>`+
+    `<p class="phint">Соедини слово с переводом</p>`+
+    `<div class="pairs">`+
+      `<div class="pcol">`+ses.left .map((w,i)=>pbtn(frontOf(w,ses.side), 'L'+i, ses.matched.has(w.id), ses.sel===i, ses.errL===i)).join('')+`</div>`+
+      `<div class="pcol">`+ses.right.map((w,i)=>pbtn(backOf(w,ses.side),  'R'+i, ses.matched.has(w.id), false,       ses.errR===i)).join('')+`</div>`+
     `</div>`;
   trBox.querySelectorAll('.pbtn').forEach(b=>b.addEventListener('click',()=>pairTap(b.dataset.k)));
 }
@@ -296,6 +322,7 @@ function pairTap(key){
   if(ses.sel===null){ toast('Сначала выбери слово слева'); return; }
 
   const lw = ses.left[ses.sel], rw = ses.right[i];
+  buzz(lw.id===rw.id ? 14 : [22,40,22]);
   if(lw.id===rw.id){
     ses.matched.add(rw.id);
     ses.ok++; ses.done++;

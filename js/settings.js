@@ -2,7 +2,7 @@
    Загружается ПОСЛЕДНИМ: использует renderTraffic/traffic из traffic.js,
    refreshAiHint из ai.js, renderSetup из train.js, renderStats/renderAch из stats.js. */
 
-const APP_VERSION = '2026-07-30 · сборка 1';
+const APP_VERSION = '2026-07-30 · сборка 2';
 
 /* ---- параметры тренировки ---- */
 const setNew = document.getElementById('setNew'), setSize = document.getElementById('setSize');

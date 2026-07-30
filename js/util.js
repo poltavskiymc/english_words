@@ -60,6 +60,12 @@ function speak(text){
   speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 
+/* Короткая вибрация на ответ. На десктопе и на iOS navigator.vibrate отсутствует —
+   поэтому просто тихо ничего не делаем, а не городим проверки на вызывающей стороне. */
+function buzz(pattern){
+  try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(_){}
+}
+
 // короткий тост поверх всего (ачивки, «добавлено», ошибки импорта)
 function toast(msg, ms=2200){
   let el=document.getElementById('toast');

@@ -115,14 +115,19 @@ function catStats(){
 }
 
 /* Набор слов на сессию: сначала просроченные к повторению, потом новые (лимит в день).
-   cats — выбранные категории (пустой массив = все). */
-function buildSession(cats, size){
+   cats — выбранные категории (пустой массив = все).
+
+   anyway=true — «без расписания»: берём все невыученные слова категории, игнорируя
+   и даты повторения, и лимит новых. Нужно, когда на сегодня всё повторено, а человек
+   хочет ещё погонять — упереться в «приходи завтра» посреди занятия обиднее, чем
+   слегка сбить интервалы. */
+function buildSession(cats, size, anyway){
   const inCat = w => !cats.length || cats.includes(w.cat);
-  const pool  = dueWords().filter(inCat);
+  const pool  = (anyway ? activeWords() : dueWords()).filter(inCat);
+  if(anyway) return shuffle(pool.slice()).slice(0, size||cfg.sessionSize);
   const fresh = pool.filter(w=>w.right===0 && w.wrong===0);
   const rep   = pool.filter(w=>w.right>0 || w.wrong>0);
-  const lim   = cfg.newPerDay;
-  const list  = shuffle(rep).concat(shuffle(fresh).slice(0, lim));
+  const list  = shuffle(rep).concat(shuffle(fresh).slice(0, cfg.newPerDay));
   return shuffle(list).slice(0, size||cfg.sessionSize);
 }
 

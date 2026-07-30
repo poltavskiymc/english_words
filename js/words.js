@@ -85,19 +85,27 @@ function renderWordList(){
   const page = list.slice(0, wShown);
   box.innerHTML =
     `<div class="muted" style="margin-bottom:8px">${nWords(list.length)}${list.length>page.length?` · показано ${page.length}`:''}</div>`+
+    /* Уровень ушёл в подпись, а справа — кружок «выучено»: снимать и ставить галочку
+       приходится часто, и гонять ради этого модалку правки было лишним шагом. */
     page.map(w=>
       `<div class="wrow${w.learned?' done':''}">`+
         `<div class="wt" data-id="${esc(w.id)}">`+
           `<div class="we">${esc(w.en)}</div>`+
-          `<div class="wr">${esc(w.ru)} · ${esc(w.cat)}</div>`+
+          `<div class="wr">${esc(w.ru)} · ${esc(w.cat)} · ${w.learned?'выучено':'ур. '+w.lvl}</div>`+
         `</div>`+
-        `<div class="lvl${w.learned?' max':''}">${w.learned?'✓':'ур. '+w.lvl}</div>`+
         `<button class="wsay" data-say="${esc(w.en)}" title="Произнести">🔊</button>`+
+        `<button class="wchk${w.learned?' on':''}" data-chk="${esc(w.id)}" title="${w.learned?'Вернуть в изучение':'Пометить выученным'}">✓</button>`+
       `</div>`).join('')+
     (list.length>page.length ? `<button class="btn ghost" id="moreBtn" style="width:100%;margin-top:12px">Показать ещё</button>` : '');
 
   box.querySelectorAll('.wt').forEach(el=>el.addEventListener('click',()=>openEdit(el.dataset.id)));
   box.querySelectorAll('.wsay').forEach(el=>el.addEventListener('click',()=>speak(el.dataset.say)));
+  box.querySelectorAll('.wchk').forEach(el=>el.addEventListener('click',()=>{
+    const w = findWord(el.dataset.chk); if(!w) return;
+    setLearned(w.id, !w.learned);                      // → wordschange → список перерисуется сам
+    buzz(12);
+    toast(w.learned ? `✓ «${esc(w.en)}» — выучено` : `↩︎ «${esc(w.en)}» вернулось в изучение`);
+  }));
   const more = document.getElementById('moreBtn');
   if(more) more.addEventListener('click',()=>{ wShown+=WPAGE; renderWordList(); });
 }

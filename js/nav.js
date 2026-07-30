@@ -31,13 +31,18 @@ document.querySelectorAll('.tabs').forEach(tabs=>{
   showSub(btns.some(b=>b.dataset.s===saved) ? saved : btns[0].dataset.s);
 });
 
-/* Реальная высота навбара (кнопки + safe-area) — в CSS как --nav-h.
-   К ней привязан тост: с захардкоженным отступом он на разных телефонах
-   то залезал на навбар, то висел в воздухе. */
-const navEl=document.querySelector('nav');
-function syncNavHeight(){ document.documentElement.style.setProperty('--nav-h', navEl.offsetHeight+'px'); }
-if(window.ResizeObserver) new ResizeObserver(syncNavHeight).observe(navEl);
-window.addEventListener('resize',syncNavHeight);
-syncNavHeight();
+/* Реальные высоты шапки и навбара (вместе с safe-area) — в CSS как --top-h и --nav-h.
+   От них считается высота экрана тренировки: карточка тянется на всё свободное место,
+   а кнопки садятся к самому низу, под большой палец. С захардкоженными числами это
+   разъезжалось на каждом втором телефоне. */
+const navEl=document.querySelector('nav'), headEl=document.querySelector('header');
+function syncChrome(){
+  const r=document.documentElement.style;
+  r.setProperty('--nav-h', navEl.offsetHeight+'px');
+  r.setProperty('--top-h', headEl.offsetHeight+'px');
+}
+if(window.ResizeObserver){ const ro=new ResizeObserver(syncChrome); ro.observe(navEl); ro.observe(headEl); }
+window.addEventListener('resize',syncChrome);
+syncChrome();
 
 document.getElementById('settingsBtn').addEventListener('click',()=>show('settings'));
