@@ -42,7 +42,12 @@ function sample(arr,n){ return shuffle(arr.slice()).slice(0,n); }
 
 /* Озвучка английского. В отличие от грузинской аппки тут всё просто:
    англоязычный голос есть в любой системе. Но на iOS без явно выбранного
-   голоса speechSynthesis часто молчит — поэтому голос ищем и ставим руками. */
+   голоса speechSynthesis часто молчит — поэтому голос ищем и ставим руками.
+
+   Выключатель живёт здесь же, а не в cfg: озвучка нужна и вне тренировки
+   (список слов), а util.js подключается раньше store.js и о cfg ещё не знает.
+   Тело <body> получает класс .nosound — по нему прячутся все кнопки 🔊,
+   чтобы не оставлять на экране кнопку, которая молчит. */
 const canSpeak = 'speechSynthesis' in window && typeof speechSynthesis.getVoices === 'function';
 let voices = [];
 function loadVoices(){ try{ voices = speechSynthesis.getVoices()||[]; }catch(_){ voices=[]; } }
@@ -50,8 +55,18 @@ if(canSpeak){
   loadVoices();
   speechSynthesis.onvoiceschanged = loadVoices;   // Safari/Chrome отдают список асинхронно
 }
+
+let soundOn = localStorage.getItem('ew_sound') !== '0';   // по умолчанию включена
+function setSound(on){
+  soundOn = !!on;
+  localStorage.setItem('ew_sound', soundOn ? '1' : '0');
+  document.body.classList.toggle('nosound', !soundOn);
+  if(!soundOn && canSpeak) try{ speechSynthesis.cancel(); }catch(_){}   // оборвать то, что уже говорится
+}
+document.body.classList.toggle('nosound', !soundOn);
+
 function speak(text){
-  if(!canSpeak || !text) return;
+  if(!soundOn || !canSpeak || !text) return;
   if(!voices.length) loadVoices();
   const v = voices.find(x=>(x.lang||'').toLowerCase().replace('_','-').startsWith('en')) || null;
   const u = new SpeechSynthesisUtterance(text);

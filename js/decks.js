@@ -1,10 +1,51 @@
-/* Вкладка «Наборы»: готовые подборки из data.js.
-   Зависит от data.js (DECKS), util.js, store.js (addWord/findWord/wordId/saveWords).
+/* Вкладка «Наборы»: сверху то, что реально лежит в словаре, снизу — готовые подборки
+   из data.js. Зависит от data.js (DECKS), util.js, store.js.
+
+   Верхний список строится по catStats(), а не по DECKS: набором считается любая
+   категория — и готовая, и своя, и приехавшая импортом или от ИИ. Иначе собственные
+   слова в наборах не видны вовсе, а у готового набора не видно, что его дополнили.
 
    Добавление идёт через тот же addWord(), что и импорт с ИИ, поэтому повторный клик
    безопасен: существующему слову обновится перевод, а прогресс останется. */
 
+function deckIcon(cat){ const d = DECKS.find(x=>x.cat===cat); return d ? d.icon : '🗂'; }
 function deckHave(d){ return d.words.filter(w=>findWord(wordId(w[0]))).length; }
+
+/* ---- наборы в словаре ---- */
+
+function renderMyDecks(){
+  const box = document.getElementById('myDecksBox');
+  const cs = catStats();
+  if(!cs.length){ box.innerHTML = ''; return; }
+  box.innerHTML =
+    `<div class="card">`+
+      `<h2>🗂 В твоём словаре</h2>`+
+      `<p class="muted">Всё, что есть сейчас: готовые наборы, свои слова, импорт, генерации ИИ. Набор можно убрать целиком, если учить его больше не хочется.</p>`+
+      cs.map(c=>{
+        const pct = Math.round(c.learned/c.total*100);
+        return `<div class="deckrow">`+
+          `<div class="di">${deckIcon(c.cat)}</div>`+
+          `<div class="dt">`+
+            `<div class="dn">${esc(c.cat)}</div>`+
+            `<div class="dd">${nWords(c.total)} · выучено ${c.learned}${c.due?` · к повторению ${c.due}`:''}</div>`+
+            `<div class="bar sm"><i style="width:${pct}%"></i></div>`+
+          `</div>`+
+          `<button class="btn ghost sm" data-del="${esc(c.cat)}" title="Убрать набор">🗑</button>`+
+        `</div>`;
+      }).join('')+
+    `</div>`;
+  box.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>dropCat(b.dataset.del)));
+}
+
+function dropCat(cat){
+  const c = catStats().find(x=>x.cat===cat); if(!c) return;
+  const learned = c.learned ? `, из них выучено ${c.learned}` : '';
+  if(!confirm(`Убрать набор «${cat}»?\n\nУдалятся все ${nWords(c.total)}${learned} и прогресс по ним. Отменить не выйдет — если жалко, сначала выгрузи TSV в настройках.`)) return;
+  const n = removeCat(cat);                      // → wordschange → все вкладки перерисуются
+  toast(`🗑 Набор «${esc(cat)}» убран, минус ${nWords(n)}`);
+}
+
+/* ---- готовые наборы ---- */
 
 function renderDecks(){
   const box = document.getElementById('decksBox');
@@ -37,11 +78,12 @@ function addDeck(d){
     const r = addWord({en, ru, ex, cat:deck.cat});
     if(r==='new') added++; else if(r==='upd') upd++;
   }));
-  saveWords();                                   // → wordschange → перерисуются все вкладки
+  saveWords();
   toast(added
     ? `📚 Добавлено ${nWords(added)}${upd?`, обновлено ${upd}`:''}`
     : 'Все эти слова уже в словаре');
 }
 
-document.addEventListener('wordschange', renderDecks);
-renderDecks();
+function refreshDecks(){ renderMyDecks(); renderDecks(); }
+document.addEventListener('wordschange', refreshDecks);
+refreshDecks();

@@ -56,6 +56,17 @@ function removeWord(id){
   const i=words.findIndex(w=>w.id===id);
   if(i>=0){ words.splice(i,1); saveWords(); }
 }
+/* Убрать набор целиком — все слова категории вместе с прогрессом. Возвращает,
+   сколько удалили. Правим массив на месте (splice, а не words=filter): на глобальный
+   `words` смотрят все модули, и подмена ссылки оставила бы часть из них на старом. */
+function removeCat(cat){
+  let n=0;
+  for(let i=words.length-1;i>=0;i--) if(words[i].cat===cat){ words.splice(i,1); n++; }
+  if(!n) return 0;
+  cfg.cats = cfg.cats.filter(c=>c!==cat); saveCfg();   // иначе фильтр тренировки укажет в пустоту
+  saveWords();
+  return n;
+}
 function setLearned(id, val){
   const w=findWord(id); if(!w) return;
   w.learned=!!val;

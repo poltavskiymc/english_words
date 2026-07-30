@@ -2,11 +2,30 @@
    Загружается ПОСЛЕДНИМ: использует renderTraffic/traffic из traffic.js,
    refreshAiHint из ai.js, renderSetup из train.js, renderStats/renderAch из stats.js. */
 
-const APP_VERSION = '2026-07-30 · сборка 2';
+const APP_VERSION = '2026-07-30 · сборка 3';
 
 /* ---- параметры тренировки ---- */
 const setNew = document.getElementById('setNew'), setSize = document.getElementById('setSize');
 setNew.value = cfg.newPerDay; setSize.value = cfg.sessionSize;
+
+/* Звук применяется сразу, без «Сохранить»: его выключают обычно посреди занятия,
+   когда рядом кто-то спит, — и ждать от человека ещё одного тапа тут неуместно. */
+const setSoundEl = document.getElementById('setSound'), soundHint = document.getElementById('soundHint');
+function refreshSoundHint(){
+  soundHint.innerHTML = !canSpeak
+    ? '⚠️ Этот браузер не умеет синтез речи — озвучка недоступна.'
+    : (soundOn
+        ? 'Слово произносится при перевороте карточки, после ответа и по кнопке 🔊.'
+        : 'Звук выключен, кнопки 🔊 спрятаны. Вибрация на ответах остаётся.');
+}
+setSoundEl.checked = soundOn && canSpeak;
+setSoundEl.disabled = !canSpeak;
+setSoundEl.addEventListener('change',()=>{
+  setSound(setSoundEl.checked);
+  refreshSoundHint();
+  if(soundOn) speak('Sound on');            // сразу слышно, что заработало и каким голосом
+});
+refreshSoundHint();
 document.getElementById('saveTrain').addEventListener('click',()=>{
   cfg.newPerDay   = Math.max(1, Math.min(100, +setNew.value  || 10));
   cfg.sessionSize = Math.max(5, Math.min(100, +setSize.value || 20));
