@@ -2,7 +2,7 @@
    Загружается ПОСЛЕДНИМ: использует renderTraffic/traffic из traffic.js,
    refreshAiHint из ai.js, renderSetup из train.js, renderStats/renderAch из stats.js. */
 
-const APP_VERSION = '2026-07-30 · сборка 3';
+const APP_VERSION = '2026-07-30 · сборка 4';
 
 /* ---- параметры тренировки ---- */
 const setNew = document.getElementById('setNew'), setSize = document.getElementById('setSize');
@@ -53,10 +53,17 @@ document.getElementById('resetTraffic').addEventListener('click',()=>{
 
 /* ---- данные ---- */
 document.getElementById('expBtn2').addEventListener('click', exportTsv);
-document.getElementById('wipeBtn').addEventListener('click',()=>{
-  if(!confirm('Стереть все слова, прогресс и ачивки? Отменить не выйдет — сначала лучше выгрузить TSV.')) return;
-  if(!confirm('Точно? Последнее предупреждение.')) return;
-  // ключ DeepSeek и счётчик трафика не трогаем: это настройки, а не учебные данные
+document.getElementById('wipeBtn').addEventListener('click', async ()=>{
+  const learned = words.filter(w=>w.learned).length;
+  const ok = await askConfirm({
+    title:'Стереть всё?', ok:'Стереть навсегда', danger:true,
+    html:
+      `<p>Сейчас в словаре <b>${nWords(words.length)}</b>${learned?`, из них выучено ${learned}`:''}. Открыто ачивок: <b>${unlocked.length}</b> из ${ACHIEVEMENTS.length}.</p>`+
+      `<p class="muted"><b>Пропадёт:</b> все слова и их уровни, настройки тренировки, вся статистика — график по дням, серия ${streak()} ${plural(streak(),'день','дня','дней')}, ${stats.answers} ответов за всё время — и все открытые ачивки.</p>`+
+      `<p class="muted"><b>Останется:</b> ключ DeepSeek и счётчик трафика — это настройки, а не учебные данные.</p>`+
+      `<p class="muted">Отменить нельзя. Приложение перезагрузится с пустого места. Если хочешь сохранить слова — закрой это окно и выгрузи TSV кнопкой выше.</p>`
+  });
+  if(!ok) return;
   [W_KEY, CFG_KEY, S_KEY, A_KEY].forEach(k=>localStorage.removeItem(k));
   location.reload();
 });

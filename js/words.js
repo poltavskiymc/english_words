@@ -30,6 +30,7 @@ function importRows(rows){
   let added=0, upd=0;
   rows.forEach(r=>{ const v=addWord(r); if(v==='new') added++; else if(v==='upd') upd++; });
   if(added||upd){
+    unarchiveCats([...new Set(rows.map(r=>r.cat))]);   // пополнили выключенный набор — включаем обратно
     saveWords();
     stats.imported++; saveStats(); checkAchievements();
   }
@@ -54,7 +55,7 @@ function renderCatFilter(){
   if(wCat && !cs.some(c=>c.cat===wCat)) wCat='';       // категория исчезла вместе со словами
   document.getElementById('wCatFilter').innerHTML =
     `<button class="chip${wCat?'':' on'}" data-c="">Все</button>`+
-    cs.map(c=>`<button class="chip${wCat===c.cat?' on':''}" data-c="${esc(c.cat)}">${esc(c.cat)} <b>${c.total}</b></button>`).join('');
+    cs.map(c=>`<button class="chip${wCat===c.cat?' on':''}" data-c="${esc(c.cat)}">${c.arch?'⏸ ':''}${esc(c.cat)} <b>${c.total}</b></button>`).join('');
   document.querySelectorAll('#wCatFilter button').forEach(b=>b.addEventListener('click',()=>{
     wCat=b.dataset.c; wShown=WPAGE; renderCatFilter(); renderWordList();
   }));
@@ -121,6 +122,7 @@ document.getElementById('addBtn').addEventListener('click',()=>{
         ex=document.getElementById('aEx'), cat=document.getElementById('aCat');
   if(!en.value.trim() || !ru.value.trim()){ toast('Нужны и слово, и перевод'); return; }
   const r = addWord({en:en.value, ru:ru.value, ex:ex.value, cat:cat.value});
+  unarchiveCats([cat.value.trim()||'Своё']);
   saveWords();
   toast(r==='upd' ? `✏️ «${esc(en.value.trim())}» обновлено` : `✅ «${esc(en.value.trim())}» добавлено`);
   en.value=''; ru.value=''; ex.value='';               // категорию оставляем: слова обычно добавляют пачкой
@@ -197,10 +199,16 @@ document.getElementById('eSave').addEventListener('click',()=>{
   closeEdit(); toast('Сохранено ✅');
 });
 
-document.getElementById('eDel').addEventListener('click',()=>{
+document.getElementById('eDel').addEventListener('click', async ()=>{
   const w = findWord(editId); if(!w) return closeEdit();
-  if(!confirm(`Удалить «${w.en}»? Прогресс по слову тоже пропадёт.`)) return;
-  removeWord(editId); closeEdit(); toast('🗑 Удалено');
+  const id = editId;
+  const ok = await askConfirm({
+    title:`Удалить «${w.en}»?`, ok:'Удалить', danger:true,
+    html:`<p>Слово исчезнет из словаря вместе с уровнем ${w.lvl}/${MAXLVL} и статистикой ответов (верно ${w.right}, ошибок ${w.wrong}).</p>`+
+         `<p class="muted">На общий график занятий и ачивки это не влияет. Отменить нельзя.</p>`
+  });
+  if(!ok) return;
+  removeWord(id); closeEdit(); toast('🗑 Удалено');
 });
 
 /* ---------- запуск ---------- */

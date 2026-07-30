@@ -136,7 +136,8 @@ function renderCatStats(){
   if(!cs.length){ el.innerHTML='<p class="muted empty">Пока ни одного слова. Загляни в «Наборы» или добавь свои на вкладке «Слова».</p>'; return; }
   el.innerHTML = cs.map(c=>{
     const pct=Math.round(c.learned/c.total*100);
-    return `<div class="crow"><div class="cnm">${esc(c.cat)}</div>`+
+    // выключенный набор из статистики не пропадает — он просто не тренируется
+    return `<div class="crow"><div class="cnm">${c.arch?'⏸ ':''}${esc(c.cat)}</div>`+
            `<div class="bar sm"><i style="width:${pct}%"></i></div>`+
            `<div class="cnum">${c.learned}/${c.total}</div></div>`;
   }).join('');

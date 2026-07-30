@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="English">
 <!-- ?v=… у css и js обязан совпадать с VER в sw.js, иначе обновление уедет мимо кеша -->
-<link rel="stylesheet" href="css/styles.css?v=3">
+<link rel="stylesheet" href="css/styles.css?v=4">
 </head>
 <body>
 <header>
@@ -198,6 +198,21 @@
 <!-- Общий список категорий для полей ввода (заполняет words.js) -->
 <datalist id="catList"></datalist>
 
+<!-- Общее окно подтверждения (util.js → askConfirm). Системный confirm() слишком
+     тесен, чтобы честно расписать последствия удаления. -->
+<div class="modal" id="confirmModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><div class="mtitle" id="cfmTitle">Подтверждение</div><button class="modal-x" id="cfmClose">✕</button></div>
+    <div class="modal-body">
+      <div id="cfmBody"></div>
+      <div class="row2">
+        <button class="btn ghost" id="cfmNo" style="flex:1">Отмена</button>
+        <button class="btn" id="cfmYes" style="flex:1">Да</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Карточка слова: правка, «выучено», удаление -->
 <div class="modal" id="editModal" hidden>
   <div class="modal-card">
@@ -220,17 +235,17 @@
 
 <!-- Порядок важен: модулей нет, всё общается глобальными функциями.
      data → util → traffic → nav → store → stats → тренажёры → контент → ИИ → настройки. -->
-<script src="js/data.js?v=3"></script>
-<script src="js/util.js?v=3"></script>
-<script src="js/traffic.js?v=3"></script>
-<script src="js/nav.js?v=3"></script>
-<script src="js/store.js?v=3"></script>
-<script src="js/stats.js?v=3"></script>
-<script src="js/train.js?v=3"></script>
-<script src="js/decks.js?v=3"></script>
-<script src="js/words.js?v=3"></script>
-<script src="js/ai.js?v=3"></script>
-<script src="js/settings.js?v=3"></script>
+<script src="js/data.js?v=4"></script>
+<script src="js/util.js?v=4"></script>
+<script src="js/traffic.js?v=4"></script>
+<script src="js/nav.js?v=4"></script>
+<script src="js/store.js?v=4"></script>
+<script src="js/stats.js?v=4"></script>
+<script src="js/train.js?v=4"></script>
+<script src="js/decks.js?v=4"></script>
+<script src="js/words.js?v=4"></script>
+<script src="js/ai.js?v=4"></script>
+<script src="js/settings.js?v=4"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));

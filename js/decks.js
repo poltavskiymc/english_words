@@ -20,29 +20,51 @@ function renderMyDecks(){
   box.innerHTML =
     `<div class="card">`+
       `<h2>🗂 В твоём словаре</h2>`+
-      `<p class="muted">Всё, что есть сейчас: готовые наборы, свои слова, импорт, генерации ИИ. Набор можно убрать целиком, если учить его больше не хочется.</p>`+
+      `<p class="muted">Всё, что есть сейчас: готовые наборы, свои слова, импорт, генерации ИИ.<br>`+
+        `<b>Тумблер</b> — учить набор или нет: выключенный не попадает в тренировку, но слова и прогресс остаются. `+
+        `<b>🗑</b> — стереть набор насовсем.</p>`+
       cs.map(c=>{
         const pct = Math.round(c.learned/c.total*100);
-        return `<div class="deckrow">`+
+        const sub = c.arch
+          ? `${nWords(c.total)} · выучено ${c.learned} · <b>не учится</b>`
+          : `${nWords(c.total)} · выучено ${c.learned}${c.due?` · к повторению ${c.due}`:''}`;
+        return `<div class="deckrow${c.arch?' off':''}">`+
           `<div class="di">${deckIcon(c.cat)}</div>`+
           `<div class="dt">`+
             `<div class="dn">${esc(c.cat)}</div>`+
-            `<div class="dd">${nWords(c.total)} · выучено ${c.learned}${c.due?` · к повторению ${c.due}`:''}</div>`+
+            `<div class="dd">${sub}</div>`+
             `<div class="bar sm"><i style="width:${pct}%"></i></div>`+
           `</div>`+
-          `<button class="btn ghost sm" data-del="${esc(c.cat)}" title="Убрать набор">🗑</button>`+
+          `<button class="tgl${c.arch?'':' on'}" role="switch" aria-checked="${!c.arch}" data-arch="${esc(c.cat)}" title="${c.arch?'Вернуть в тренировку':'Не учить этот набор'}"><i></i></button>`+
+          `<button class="btn ghost sm" data-del="${esc(c.cat)}" title="Удалить набор">🗑</button>`+
         `</div>`;
       }).join('')+
     `</div>`;
+  box.querySelectorAll('[data-arch]').forEach(b=>b.addEventListener('click',()=>{
+    const cat = b.dataset.arch, on = !isArchived(cat);
+    setArchived(cat, on);                        // → wordschange → перерисуются все вкладки
+    buzz(12);
+    toast(on ? `⏸ «${esc(cat)}» больше не учится` : `▶︎ «${esc(cat)}» вернулся в тренировку`);
+  }));
   box.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>dropCat(b.dataset.del)));
 }
 
-function dropCat(cat){
+/* Удаление необратимо, поэтому окно честно перечисляет, что пропадёт и что уцелеет,
+   и подсказывает тумблер — обычно человеку нужен именно он, а не потеря прогресса. */
+async function dropCat(cat){
   const c = catStats().find(x=>x.cat===cat); if(!c) return;
-  const learned = c.learned ? `, из них выучено ${c.learned}` : '';
-  if(!confirm(`Убрать набор «${cat}»?\n\nУдалятся все ${nWords(c.total)}${learned} и прогресс по ним. Отменить не выйдет — если жалко, сначала выгрузи TSV в настройках.`)) return;
+  const ok = await askConfirm({
+    title: `Удалить «${cat}»?`,
+    ok: 'Удалить навсегда', danger: true,
+    html:
+      `<p>Из словаря исчезнут <b>${nWords(c.total)}</b>${c.learned?`, из них выучено ${c.learned}`:''}.</p>`+
+      `<p class="muted"><b>Пропадёт:</b> уровень и статистика каждого слова, набор в разбивке «По категориям» и его вклад в «выучено N из M».</p>`+
+      `<p class="muted"><b>Останется:</b> график занятий по дням, серия, «всего ответов» и уже открытые ачивки — они считаются по ответам, а не по словам.</p>`+
+      `<p class="muted">Отменить нельзя. Если нужно просто перестать его учить — закрой это окно и выключи набор тумблером: слова и прогресс сохранятся. А если жалко только слов — выгрузи TSV в настройках.</p>`
+  });
+  if(!ok) return;
   const n = removeCat(cat);                      // → wordschange → все вкладки перерисуются
-  toast(`🗑 Набор «${esc(cat)}» убран, минус ${nWords(n)}`);
+  toast(`🗑 Набор «${esc(cat)}» удалён, минус ${nWords(n)}`);
 }
 
 /* ---- готовые наборы ---- */
@@ -78,6 +100,7 @@ function addDeck(d){
     const r = addWord({en, ru, ex, cat:deck.cat});
     if(r==='new') added++; else if(r==='upd') upd++;
   }));
+  unarchiveCats(list.map(x=>x.cat));   // раз добавляем — значит снова хотим учить
   saveWords();
   toast(added
     ? `📚 Добавлено ${nWords(added)}${upd?`, обновлено ${upd}`:''}`

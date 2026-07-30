@@ -81,6 +81,34 @@ function buzz(pattern){
   try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(_){}
 }
 
+/* Окно подтверждения. Возвращает Promise<boolean>.
+   Нужно вместо системного confirm() там, где последствия стоит расписать по пунктам:
+   в одну строку алерта «что пропадёт, а что останется» не влезает, а решение
+   необратимое. Разметка — #confirmModal в index.html. */
+let cfmResolve = null;
+function cfmDone(v){
+  document.getElementById('confirmModal').hidden = true;
+  const r = cfmResolve; cfmResolve = null;
+  if(r) r(v);
+}
+function askConfirm(opts){
+  if(cfmResolve) cfmDone(false);                        // висящий Promise закрываем отказом
+  document.getElementById('cfmTitle').textContent = opts.title || 'Подтверждение';
+  document.getElementById('cfmBody').innerHTML = opts.html || '';
+  const yes = document.getElementById('cfmYes');
+  yes.textContent = opts.ok || 'Да';
+  yes.classList.toggle('warn', !!opts.danger);
+  document.getElementById('confirmModal').hidden = false;
+  return new Promise(res=>{ cfmResolve = res; });
+}
+(function initConfirm(){
+  const m = document.getElementById('confirmModal');
+  document.getElementById('cfmYes').addEventListener('click', ()=>cfmDone(true));
+  document.getElementById('cfmNo').addEventListener('click', ()=>cfmDone(false));
+  document.getElementById('cfmClose').addEventListener('click', ()=>cfmDone(false));
+  m.addEventListener('click', e=>{ if(e.target===m) cfmDone(false); });
+})();
+
 // короткий тост поверх всего (ачивки, «добавлено», ошибки импорта)
 function toast(msg, ms=2200){
   let el=document.getElementById('toast');

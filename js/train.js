@@ -40,8 +40,9 @@ function renderSetup(){
   document.querySelectorAll('#segDir  button').forEach(b=>b.classList.toggle('on', b.dataset.v===cfg.dir));
   document.getElementById('modeHelp').innerHTML = `<p class="muted">${MODE_HELP[cfg.mode]}</p>`;
 
-  const cs = catStats();
-  // категорию могли переименовать или удалить вместе со словами — чистим выбор
+  // выключенных наборов в выборе быть не может — их тут просто нет
+  const cs = catStats().filter(c=>!c.arch);
+  // категорию могли переименовать, удалить вместе со словами или выключить — чистим выбор
   cfg.cats = cfg.cats.filter(c=>cs.some(x=>x.cat===c));
   const box = document.getElementById('catChips');
   box.innerHTML =
@@ -64,10 +65,12 @@ function renderSetup(){
     hint.innerHTML = `К повторению сейчас: <b>${ready}</b> ${plural(ready,'слово','слова','слов')} · всего в изучении ${total}`;
   }else if(free){
     hint.innerHTML = 'На сегодня всё повторено 🎉 Можно погонять ещё — но уже мимо расписания, интервалы слегка собьются.';
+  }else if(words.length && catStats().every(c=>c.arch)){
+    hint.innerHTML = 'Все наборы выключены. Включи хотя бы один тумблером в <b>📚 Наборах</b>.';
+  }else if(total){
+    hint.innerHTML = 'В выбранных категориях нет невыученных слов. Сними фильтр или добавь новых.';
   }else{
-    hint.innerHTML = total
-      ? 'В выбранных категориях нет невыученных слов. Сними фильтр или добавь новых.'
-      : 'Все слова помечены выученными. Сними галочку в списке, если хочешь их повторить.';
+    hint.innerHTML = 'Все слова помечены выученными. Сними галочку в списке, если хочешь их повторить.';
   }
   btn.textContent = ready ? 'Начать' : '🔁 Повторить без расписания';
   btn.disabled = !(ready || free);

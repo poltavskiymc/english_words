@@ -116,6 +116,8 @@ input:focus,textarea:focus{outline:0; border-color:var(--brand2); box-shadow:0 0
 .btn.sm{padding:9px 14px; font-size:13px}
 .btn.big{display:block; width:100%; padding:16px; font-size:16.5px; border-radius:16px}
 .btn.danger{color:var(--bad); border-color:var(--bad)}
+/* красная кнопка — только на необратимом действии в окне подтверждения */
+.btn.warn{background:linear-gradient(135deg,#d64545,#e46a6a); color:#fff; box-shadow:0 6px 18px rgba(214,69,69,.32)}
 .row2{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
 /* «выбрать файл» прикидывается обычной кнопкой */
 .file{position:relative; overflow:hidden}
@@ -241,6 +243,15 @@ input:focus,textarea:focus{outline:0; border-color:var(--brand2); box-shadow:0 0
 /* корзина нейтральная, а не красная: восемь красных кнопок подряд читаются
    как предупреждение, хотя удаление и так за подтверждением */
 .deckrow .btn{flex-shrink:0; padding:8px 11px; color:var(--muted)}
+.deckrow.off .di, .deckrow.off .dt{opacity:.5}
+
+/* тумблер «учить набор или нет» */
+.tgl{position:relative; flex-shrink:0; width:46px; height:27px; border-radius:999px; border:1px solid var(--line); background:var(--paper); cursor:pointer; padding:0; transition:background .2s, border-color .2s}
+.tgl i{position:absolute; top:2px; left:2px; width:21px; height:21px; border-radius:50%; background:var(--muted); transition:transform .2s ease, background .2s}
+.tgl.on{background:linear-gradient(135deg,var(--brand),var(--brand2)); border-color:transparent}
+.tgl.on i{transform:translateX(19px); background:#fff}
+.tgl:active i{transform:scale(.9)}
+.tgl.on:active i{transform:translateX(19px) scale(.9)}
 
 /* ---- список слов ---- */
 .wrow{display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line)}

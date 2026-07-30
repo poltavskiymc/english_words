@@ -108,19 +108,40 @@ function grade(id, ok, graded){
 
 /* ---- выборки ---- */
 
-function activeWords(){ return words.filter(w=>!w.learned); }
+/* Выключенные наборы. «Не хочу это больше учить» ≠ «сотри память об этом»:
+   слова остаются в словаре, в статистике и в списке, но в тренировку не попадают.
+   Список категорий лежит в cfg, а не флагом на каждом слове — иначе флаг пришлось бы
+   проставлять всем словам категории и чинить его при импорте новых. */
+function isArchived(cat){ return cfg.archived.includes(cat); }
+function setArchived(cat, on){
+  cfg.archived = cfg.archived.filter(c=>c!==cat);
+  if(on){
+    cfg.archived.push(cat);
+    cfg.cats = cfg.cats.filter(c=>c!==cat);      // выключенный набор не может остаться фильтром тренировки
+  }
+  saveCfg();
+  document.dispatchEvent(new CustomEvent('wordschange'));   // видимый набор слов изменился
+}
+// добавили слова в выключенный набор — значит, снова хотим его учить
+function unarchiveCats(cats){
+  const before = cfg.archived.length;
+  cfg.archived = cfg.archived.filter(c=>!cats.includes(c));
+  if(cfg.archived.length !== before) saveCfg();
+}
+
+function activeWords(){ return words.filter(w=>!w.learned && !isArchived(w.cat)); }
 function dueWords(){ const t=startOfToday()+DAY-1; return activeWords().filter(w=>w.due<=t); }
 function newWords(){ return activeWords().filter(w=>w.right===0 && w.wrong===0); }
 
-// категории с подсчётом: [{cat, total, learned, due}]
+// категории с подсчётом: [{cat, total, learned, due, arch}]
 function catStats(){
   const m=new Map();
   words.forEach(w=>{
-    if(!m.has(w.cat)) m.set(w.cat,{cat:w.cat, total:0, learned:0, due:0});
+    if(!m.has(w.cat)) m.set(w.cat,{cat:w.cat, total:0, learned:0, due:0, arch:isArchived(w.cat)});
     const c=m.get(w.cat);
     c.total++;
     if(w.learned) c.learned++;
-    else if(w.due<=startOfToday()+DAY-1) c.due++;
+    else if(!c.arch && w.due<=startOfToday()+DAY-1) c.due++;   // у выключенных «к повторению» не бывает
   });
   return [...m.values()].sort((a,b)=>a.cat.localeCompare(b.cat,'ru'));
 }
@@ -144,9 +165,11 @@ function buildSession(cats, size, anyway){
 
 /* ---- настройки тренировки ---- */
 const cfg = Object.assign(
-  { mode:'cards', dir:'en-ru', cats:[], newPerDay:10, sessionSize:20 },
+  { mode:'cards', dir:'en-ru', cats:[], archived:[], newPerDay:10, sessionSize:20 },
   JSON.parse(localStorage.getItem(CFG_KEY)||'{}')
 );
+if(!Array.isArray(cfg.cats)) cfg.cats=[];
+if(!Array.isArray(cfg.archived)) cfg.archived=[];   // конфиг из старой сборки поля не знал
 function saveCfg(){ localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
 
 /* Что показать на лице карточки/вопроса с учётом направления.
